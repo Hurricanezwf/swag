@@ -118,7 +118,11 @@ func (pkgDefs *PackagesDefinitions) RangeFiles(handle func(info *AstFileInfo) er
 func (pkgDefs *PackagesDefinitions) ParseTypes() (map[*TypeSpecDef]*Schema, error) {
 	parsedSchemas := make(map[*TypeSpecDef]*Schema)
 	for astFile, info := range pkgDefs.files {
-		pkgDefs.parseTypesFromFile(astFile, info.PackagePath, parsedSchemas)
+		pkgpath := info.PackagePath
+		if gomod := os.Getenv("GO_MOD"); gomod != "" {
+			pkgpath = filepath.Join(gomod, info.PackagePath)
+		}
+		pkgDefs.parseTypesFromFile(astFile, pkgpath, parsedSchemas)
 		pkgDefs.parseFunctionScopedTypesFromFile(astFile, info.PackagePath, parsedSchemas)
 	}
 	pkgDefs.removeAllNotUniqueTypes()

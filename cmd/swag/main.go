@@ -1,8 +1,11 @@
 package main
 
 import (
+	"bufio"
+	"bytes"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"os"
 	"strings"
@@ -273,6 +276,27 @@ func main() {
 			},
 		},
 	}
+
+	gomod := os.Getenv("GO_MOD")
+	if gomod == "" {
+		gomodBytes, err := ioutil.ReadFile("go.mod")
+		if err != nil {
+			panic(fmt.Sprintf("failed to read go.mod, %v", err))
+		}
+		scanner := bufio.NewScanner(bytes.NewBuffer(gomodBytes))
+		for scanner.Scan() {
+			line := scanner.Text()
+			if !strings.HasPrefix(line, "module ") {
+				continue
+			}
+			gomod = strings.Trim(strings.TrimPrefix(line, "module "), " ")
+			break
+		}
+	}
+	if gomod == "" {
+		panic("go mod value cannot be found either from GO_MOD env value nor from go.mod file")
+	}
+	os.Setenv("GO_MOD", gomod)
 
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)
